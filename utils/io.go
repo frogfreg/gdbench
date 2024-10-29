@@ -1,9 +1,13 @@
 package utils
 
 import (
+	"fmt"
 	"io"
 	"os"
+	"time"
 )
+
+const gigabyte = 1024 * 1024 * 1024
 
 func SequentialWrite(dir string, size int) (string, error) {
 	f, err := os.CreateTemp(dir, "tempFile-seq")
@@ -40,4 +44,35 @@ func SequentialRead(path string) error {
 	}
 
 	return nil
+}
+
+func BenchMarkSequentialWrite() {
+	samples := []int64{}
+
+	finishTime := time.Now().Add(10 * time.Second)
+
+	f, err := os.CreateTemp("testfiles", "temp")
+	if err != nil {
+		panic(err)
+	}
+
+	writtenBytes := 0
+
+	for time.Now().Before(finishTime) {
+
+		if writtenBytes >= gigabyte {
+			writtenBytes = 0
+		}
+		start := time.Now()
+		n, err := f.WriteAt(make([]byte, 1024), int64(writtenBytes))
+		if err != nil {
+			panic(err)
+		}
+		writtenBytes += n
+		finishTime := time.Since(start)
+
+		samples = append(samples, int64(finishTime))
+	}
+
+	fmt.Printf("the length of samples is: %v\n", len(samples))
 }

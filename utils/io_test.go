@@ -39,3 +39,7 @@ func TestSequentialRead(t *testing.T) {
 		t.Error(err)
 	}
 }
+
+func TestBenchmarkSequentialWrite(t *testing.T) {
+	BenchMarkSequentialWrite()
+}
