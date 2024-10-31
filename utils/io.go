@@ -7,72 +7,51 @@ import (
 	"time"
 )
 
-const gigabyte = 1024 * 1024 * 1024
+const Mebibyte = 1024 * 1024
+const Gibibyte = Mebibyte * 1024
 
-func SequentialWrite(dir string, size int) (string, error) {
-	f, err := os.CreateTemp(dir, "tempFile-seq")
-	if err != nil {
-		return "", err
-	}
-	data := make([]byte, size)
+const Megabyte = 1_000_000
+const Gigabyte = Megabyte * 1_000
 
-	_, err = f.Write(data)
-	if err != nil {
-		return "", err
-	}
+func SeqW(filename string) {
+	samples := []float64{}
 
-	return f.Name(), f.Close()
-}
-
-func SequentialRead(path string) error {
-	file, err := os.Open(path)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	buffer := make([]byte, 4096)
-
-	for {
-		n, err := file.Read(buffer)
-		if err != nil && err != io.EOF {
-			return err
-		}
-		if n == 0 {
-			break
-		}
-	}
-
-	return nil
-}
-
-func BenchMarkSequentialWrite() {
-	samples := []int64{}
-
-	finishTime := time.Now().Add(10 * time.Second)
-
-	f, err := os.CreateTemp("testfiles", "temp")
+	f, err := os.OpenFile(filename, os.O_RDWR, 0o666)
 	if err != nil {
 		panic(err)
 	}
 
-	writtenBytes := 0
-
-	for time.Now().Before(finishTime) {
-
-		if writtenBytes >= gigabyte {
-			writtenBytes = 0
-		}
+	for range 5 {
 		start := time.Now()
-		n, err := f.WriteAt(make([]byte, 1024), int64(writtenBytes))
+		n, err := f.WriteAt(make([]byte, Gigabyte), 0)
+		finish := time.Since(start)
 		if err != nil {
 			panic(err)
 		}
-		writtenBytes += n
-		finishTime := time.Since(start)
 
-		samples = append(samples, int64(finishTime))
+		speedSample := (float64(n) / float64(Megabyte)) / finish.Seconds()
+
+		samples = append(samples, speedSample)
 	}
 
-	fmt.Printf("the length of samples is: %v\n", len(samples))
+	fmt.Printf("samples: %#v\n", samples)
+}
+
+func SeqR(filename string) {
+	samples := []float64{}
+
+	for range 5 {
+		start := time.Now()
+
+		data, err := os.ReadFile(filename)
+		finish := time.Since(start)
+		if err != nil && err != io.EOF {
+			panic(err)
+		}
+
+		speedSample := (float64(len(data)) / float64(Megabyte)) / finish.Seconds()
+		samples = append(samples, speedSample)
+	}
+
+	fmt.Printf("read samples: %#v\n", samples)
 }

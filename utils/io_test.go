@@ -5,41 +5,42 @@ import (
 	"testing"
 )
 
-func TestSequentialWrite(t *testing.T) {
-	tempDir, err := os.MkdirTemp("testfiles", "tempDir-seq")
+func TestSeqW(t *testing.T) {
+
+	f, err := os.CreateTemp("testfiles", "test-seqw-*")
 	if err != nil {
 		t.Error(err)
 	}
 
-	if _, err := SequentialWrite(tempDir, 1024*1024*100); err != nil {
+	SeqW(f.Name())
+
+	if err := os.Remove(f.Name()); err != nil {
 		t.Error(err)
 	}
 
-	if err := os.RemoveAll(tempDir); err != nil {
-		t.Error(err)
-	}
+	t.Error("erring on purpose")
 }
 
-func TestSequentialRead(t *testing.T) {
-	tempDir, err := os.MkdirTemp("testfiles", "tempDir-seq")
+func TestSeqR(t *testing.T) {
+
+	f, err := os.CreateTemp("testfiles", "test-seqr-*")
 	if err != nil {
 		t.Error(err)
 	}
 
-	fName, err := SequentialWrite(tempDir, 1024*1024*100)
-	if err != nil {
+	if _, err := f.Write(make([]byte, Gigabyte)); err != nil {
 		t.Error(err)
 	}
 
-	if err := SequentialRead(fName); err != nil {
+	if err := f.Close(); err != nil {
 		t.Error(err)
 	}
 
-	if err := os.RemoveAll(tempDir); err != nil {
+	SeqR(f.Name())
+
+	if err := os.Remove(f.Name()); err != nil {
 		t.Error(err)
 	}
-}
 
-func TestBenchmarkSequentialWrite(t *testing.T) {
-	BenchMarkSequentialWrite()
+	t.Error("erring on purpose")
 }
